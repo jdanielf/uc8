@@ -1,28 +1,28 @@
 import { StatusBar } from 'expo-status-bar';
-// import {Card} from 'react-native-paper';
-import { StyleSheet, Text, View } from 'react-native';
-import  Login from './src/components/Form.js';
+import { StyleSheet, Text, View, Image } from 'react-native';
+import Login from './src/screens/Form.js';
+import Cadastro from './src/screens/Cadastro.js';
+import Casa from './src/screens/Casa.js';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import Teste from './src/screens/Teste.js';
+import { DateTimePickerAndroid} from '@react-native-community/datetimepicker';
+
+
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Desenvolvimento Mobile!</Text>
-
-      
-      <Login></Login>
-      
-
-      
-
+    <SafeAreaView style={styles.container}>
+      {/* <Text>Desenvolviment o Mobile!</Text> */}
+      {/* <Login /> */}
+      {/* <Cadastro /> */}
+      {/* <Casa /> */}
+      <Teste />
+      {/* <Image
+        source={{ uri: 'https://picsum.photos/200/200' }}
+        style={styles.image}
+      /> */}
       <StatusBar style="auto" />
-
-     <Image 
-     
-     source= {{uri: 'https://share.google/ow5GyxiwfC8p5ie5I'}}
-
-     />
-
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -32,5 +32,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
+  },
+
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
   },
 });
