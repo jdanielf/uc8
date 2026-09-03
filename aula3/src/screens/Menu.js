@@ -2,8 +2,12 @@ import { Alert, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Menu({ navigation }) {
-  function abrirCompromissos() {
-    navigation.navigate('Compromissos');
+  function abrirNovoCompromisso() {
+    navigation.navigate('Compromissos', { exibirFormulario: true });
+  }
+
+  function abrirCompromissosCadastrados() {
+    navigation.navigate('Compromissos', { exibirFormulario: false });
   }
 
   return (
@@ -14,7 +18,7 @@ export default function Menu({ navigation }) {
       </View>
 
       <View style={styles.opcoes}>
-        <Pressable style={styles.card} onPress={abrirCompromissos}>
+        <Pressable style={styles.card} onPress={abrirNovoCompromisso}>
           <View style={[styles.icone, styles.iconeNovo]}>
             <Ionicons name="add-circle" size={32} color="#ffffff" />
           </View>
@@ -25,7 +29,7 @@ export default function Menu({ navigation }) {
           <Ionicons name="chevron-forward" size={24} color="#64748b" />
         </Pressable>
 
-        <Pressable style={styles.card} onPress={abrirCompromissos}>
+        <Pressable style={styles.card} onPress={abrirCompromissosCadastrados}>
           <View style={[styles.icone, styles.iconeLista]}>
             <Ionicons name="list" size={32} color="#ffffff" />
           </View>

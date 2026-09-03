@@ -3,7 +3,7 @@ import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, Text, TextInput, 
 
 const opcoesPrioridade = ['Baixa', 'Média', 'Alta'];
 
-export default function Compromissos() {
+export default function Compromissos({ navigation, route }) {
   // Estados do formulário e da lista de compromissos.
   const [lista, setLista] = useState([]);
   const [nome, setNome] = useState('');
@@ -11,6 +11,7 @@ export default function Compromissos() {
   const [prioridade, setPrioridade] = useState('Média');
   const [observacao, setObservacao] = useState('');
   const [idEditando, setIdEditando] = useState(null);
+  const exibirFormulario = route.params?.exibirFormulario ?? true;
 
   // Executa sempre que a lista for alterada.
   useEffect(() => {
@@ -61,6 +62,7 @@ export default function Compromissos() {
     setPrioridade(item.prioridade);
     setObservacao(item.observacao);
     setIdEditando(item.id);
+    navigation.setParams({ exibirFormulario: true });
   }
 
   function alterarConclusao(id) {
@@ -127,17 +129,19 @@ export default function Compromissos() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={lista}
+        data={exibirFormulario ? [] : lista}
         keyExtractor={(item) => item.id}
         renderItem={renderizarItem}
         contentContainerStyle={styles.lista}
         ListHeaderComponent={
           <View>
             <Text style={styles.titulo}>{'\n'}Gerenciador de Compromissos</Text>
-            <Pressable style={styles.botaoGoogle} onPress={abrirGoogle}>
-              <Text style={styles.textoGoogle}>Abrir Google</Text>
-            </Pressable>
-            <View style={styles.formulario}>
+            {exibirFormulario ? (
+              <Pressable style={styles.botaoGoogle} onPress={abrirGoogle}>
+                <Text style={styles.textoGoogle}>Abrir Google</Text>
+              </Pressable>
+            ) : null}
+            {exibirFormulario ? <View style={styles.formulario}>
               <Text style={styles.subtitulo}>{idEditando ? 'Editar compromisso' : 'Novo compromisso'}</Text>
               <TextInput style={styles.input} placeholder="Nome do compromisso" value={nome} onChangeText={setNome} />
               <TextInput style={styles.input} placeholder="Data de vencimento (ex.: 31/08/2026)" value={data} onChangeText={setData} />
@@ -156,11 +160,15 @@ export default function Compromissos() {
                 <Text style={styles.textoSalvar}>{idEditando ? 'Salvar edição' : 'Adicionar compromisso'}</Text>
               </Pressable>
               {idEditando ? <Pressable onPress={limparFormulario}><Text style={styles.cancelar}>Cancelar edição</Text></Pressable> : null}
-            </View>
-            <Text style={styles.tituloLista}>Compromissos do dia ({lista.length})</Text>
+            </View> : null}
+            {!exibirFormulario ? (
+              <Text style={styles.tituloLista}>Compromissos do dia ({lista.length})</Text>
+            ) : null}
           </View>
         }
-        ListEmptyComponent={<Text style={styles.vazio}>Nenhum compromisso adicionado.</Text>}
+        ListEmptyComponent={
+          !exibirFormulario ? <Text style={styles.vazio}>Nenhum compromisso adicionado.</Text> : null
+        }
       />
     </SafeAreaView>
   );

@@ -9,6 +9,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+// import { createDrawerNavigator } from '@react-navigation/drawer';
+
+
+
 
 // Comentado: @react-navigation/bottom-tabs ainda não foi instalado.
 // import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -69,6 +73,18 @@ const AppNavigation = () => (
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+// const Drawer = createDrawerNavigator();
+
+
+//  const DrawerNavigator = ({route}) => {
+//   return(
+//     <Drawer.Navigator>
+//       <Drawer.Screen name="Menu" component={Menu} />
+//       <Drawer.Screen name="Compromissos" component={Compromissos} />
+//       <Drawer.Screen name="Configurações" component={Configuracoes} />
+//     </Drawer.Navigator>
+//   )
+//  };
 
 function TabNavigator() {
   return (
