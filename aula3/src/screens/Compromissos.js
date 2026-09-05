@@ -1,215 +1,87 @@
-import { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, Text, TextInput,  View, Linking} from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { useAgendamentos } from '../context/AgendamentosContext';
 
-const opcoesPrioridade = ['Baixa', 'Média', 'Alta'];
+const medicosPorEspecialidade = {
+  'Clínico Geral': ['Dra. Ana Martins', 'Dr. Paulo Souza'],
+  Cardiologia: ['Dr. Ricardo Lima'],
+  Pediatria: ['Dra. Beatriz Costa'],
+  Dermatologia: ['Dra. Camila Alves'],
+};
+const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+function inicioDoDia(data) { return new Date(data.getFullYear(), data.getMonth(), data.getDate()); }
+function chaveData(data) { return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`; }
+function textoData(data) { return data.toLocaleDateString('pt-BR'); }
 
 export default function Compromissos({ navigation, route }) {
-  // Estados do formulário e da lista de compromissos.
-  const [lista, setLista] = useState([]);
-  const [nome, setNome] = useState('');
-  const [data, setData] = useState('');
-  const [prioridade, setPrioridade] = useState('Média');
-  const [observacao, setObservacao] = useState('');
-  const [idEditando, setIdEditando] = useState(null);
-  const exibirFormulario = route.params?.exibirFormulario ?? true;
+  const { agendamentos, removerAgendamento } = useAgendamentos();
+  const hoje = useMemo(() => inicioDoDia(new Date()), []);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [especialidade, setEspecialidade] = useState('Clínico Geral');
+  const [medico, setMedico] = useState('Dra. Ana Martins');
+  const [dataSelecionada, setDataSelecionada] = useState(null);
+  const [hora, setHora] = useState('');
+  const [mesExibido, setMesExibido] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
 
-  // Executa sempre que a lista for alterada.
   useEffect(() => {
-    console.log(`Quantidade de compromissos: ${lista.length}`);
-  }, [lista]);
-
-  function limparFormulario() {
-    setNome('');
-    setData('');
-    setPrioridade('Média');
-    setObservacao('');
-    setIdEditando(null);
-  }
-
-  function salvar() {
-    if (!nome.trim() || !data.trim()) {
-      Alert.alert('Atenção', 'Preencha o nome e a data do compromisso.');
-      return;
+    if (route.params?.mostrarFormulario) {
+      setMostrarFormulario(true);
+      navigation.setParams({ mostrarFormulario: undefined });
     }
+  }, [navigation, route.params?.mostrarFormulario]);
 
-    const dados = {
-      nome: nome.trim(),
-      data: data.trim(),
-      prioridade,
-      observacao: observacao.trim(),
-    };
-
-    if (idEditando) {
-      // map mantém os itens que não estão sendo editados e atualiza só o escolhido.
-      setLista((listaAtual) =>
-        listaAtual.map((item) =>
-          item.id === idEditando ? { ...item, ...dados } : item
-        )
-      );
-    } else {
-      setLista((listaAtual) => [
-        { id: Date.now().toString(), ...dados, concluido: false },
-        ...listaAtual,
-      ]);
-    }
-
-    limparFormulario();
+  function selecionarEspecialidade(valor) { setEspecialidade(valor); setMedico(medicosPorEspecialidade[valor][0]); }
+  function temVaga(data) { const dia = data.getDay(); return data >= hoje && dia >= 1 && dia <= 5; }
+  function selecionarData(data) { setDataSelecionada(data); setHora(''); }
+  function horariosDisponiveis() {
+    if (!dataSelecionada) return [];
+    const base = especialidade === 'Pediatria' ? ['08:00', '09:00', '10:00', '14:00', '15:00'] : ['08:00', '09:30', '11:00', '14:00', '15:30', '17:00'];
+    const ocupados = agendamentos.filter((item) => item.medico === medico && item.data === textoData(dataSelecionada)).map((item) => item.hora);
+    return base.filter((item) => !ocupados.includes(item));
   }
-
-  function editar(item) {
-    setNome(item.nome);
-    setData(item.data);
-    setPrioridade(item.prioridade);
-    setObservacao(item.observacao);
-    setIdEditando(item.id);
-    navigation.setParams({ exibirFormulario: true });
+  function avancar() {
+    if (!dataSelecionada || !hora) { Alert.alert('Atenção', 'Selecione um dia com vaga e um horário disponível.'); return; }
+    setMostrarFormulario(false);
+    navigation.navigate('Confirmacao', { agendamento: { especialidade, medico, data: textoData(dataSelecionada), hora } });
   }
-
-  function alterarConclusao(id) {
-    setLista((listaAtual) =>
-      listaAtual.map((item) =>
-        item.id === id ? { ...item, concluido: !item.concluido } : item
-      )
+  function confirmarCancelamento(item) {
+    Alert.alert(
+      'Cancelar agendamento',
+      `Tem certeza que quer cancelar o agendamento com ${item.medico}?`,
+      [
+        { text: 'Não', style: 'cancel' },
+        { text: 'Sim, cancelar', style: 'destructive', onPress: () => removerAgendamento(item.id) },
+      ]
     );
   }
+  function renderizarItem({ item }) { return <View style={styles.card}><Text style={styles.especialidade}>{item.especialidade}</Text><Text style={styles.medico}>{item.medico}</Text><Text style={styles.data}>Data: {item.data} às {item.hora}</Text><Pressable style={styles.botaoDesmarcar} onPress={() => confirmarCancelamento(item)}><Text style={styles.textoDesmarcar}>Desmarcar agendamento</Text></Pressable></View>; }
 
-  function excluir(id) {
-    Alert.alert('Excluir', 'Deseja excluir este compromisso?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: () =>
-          setLista((listaAtual) => listaAtual.filter((item) => item.id !== id)),
-      },
-    ]);
+  function Calendario() {
+    const primeiroDia = new Date(mesExibido.getFullYear(), mesExibido.getMonth(), 1).getDay();
+    const quantidadeDias = new Date(mesExibido.getFullYear(), mesExibido.getMonth() + 1, 0).getDate();
+    const celulas = Array.from({ length: primeiroDia + quantidadeDias }, (_, indice) => indice < primeiroDia ? null : new Date(mesExibido.getFullYear(), mesExibido.getMonth(), indice - primeiroDia + 1));
+    const podeVoltar = mesExibido.getFullYear() > hoje.getFullYear() || mesExibido.getMonth() > hoje.getMonth();
+    return <View style={styles.calendario}>
+      <View style={styles.mes}><Pressable disabled={!podeVoltar} onPress={() => setMesExibido(new Date(mesExibido.getFullYear(), mesExibido.getMonth() - 1, 1))}><Text style={[styles.seta, !podeVoltar && styles.setaDesativada]}>‹</Text></Pressable><Text style={styles.nomeMes}>{meses[mesExibido.getMonth()]} {mesExibido.getFullYear()}</Text><Pressable onPress={() => setMesExibido(new Date(mesExibido.getFullYear(), mesExibido.getMonth() + 1, 1))}><Text style={styles.seta}>›</Text></Pressable></View>
+      <View style={styles.grade}>{diasSemana.map((dia) => <Text key={dia} style={styles.diaSemana}>{dia}</Text>)}{celulas.map((dia, indice) => !dia ? <View key={`vazio-${indice}`} style={styles.celula} /> : <Pressable key={chaveData(dia)} disabled={!temVaga(dia)} onPress={() => selecionarData(dia)} style={[styles.celula, styles.diaCalendario, !temVaga(dia) && styles.diaIndisponivel, dataSelecionada && chaveData(dataSelecionada) === chaveData(dia) && styles.diaSelecionado]}><Text style={[styles.numeroDia, !temVaga(dia) && styles.numeroIndisponivel, dataSelecionada && chaveData(dataSelecionada) === chaveData(dia) && styles.numeroSelecionado]}>{dia.getDate()}</Text></Pressable>)}</View>
+      <Text style={styles.legenda}><Text style={styles.ponto}>●</Text> Dias em verde possuem vagas.</Text>
+    </View>;
   }
 
-  function abrirGoogle() {
-    Linking.openURL('https://www.google.com').catch(() => {
-      Alert.alert('Erro', 'Não foi possível abrir o Google.');
-    });
-  }
+  if (mostrarFormulario) return <SafeAreaView style={styles.container}><FlatList data={[{ id: 'formulario' }]} keyExtractor={(item) => item.id} contentContainerStyle={styles.formularioLista} renderItem={() => <View style={styles.formulario}>
+    <Text style={styles.titulo}>Novo agendamento</Text><Text style={styles.label}>Especialidade</Text>
+    <View style={styles.opcoes}>{Object.keys(medicosPorEspecialidade).map((opcao) => <Pressable key={opcao} onPress={() => selecionarEspecialidade(opcao)} style={[styles.opcao, especialidade === opcao && styles.opcaoAtiva]}><Text style={[styles.textoOpcao, especialidade === opcao && styles.textoOpcaoAtiva]}>{opcao}</Text></Pressable>)}</View>
+    <Text style={styles.label}>Médico(a)</Text>{medicosPorEspecialidade[especialidade].map((opcao) => <Pressable key={opcao} onPress={() => setMedico(opcao)} style={[styles.medicoOpcao, medico === opcao && styles.opcaoAtiva]}><Text style={[styles.textoOpcao, medico === opcao && styles.textoOpcaoAtiva]}>{opcao}</Text></Pressable>)}
+    <Text style={styles.label}>Escolha uma data</Text><Calendario />
+    {dataSelecionada ? <><Text style={styles.label}>Horários disponíveis em {textoData(dataSelecionada)}</Text><View style={styles.horarios}>{horariosDisponiveis().map((opcao) => <Pressable key={opcao} onPress={() => setHora(opcao)} style={[styles.horario, hora === opcao && styles.horarioAtivo]}><Text style={[styles.textoOpcao, hora === opcao && styles.textoOpcaoAtiva]}>{opcao}</Text></Pressable>)}</View>{horariosDisponiveis().length === 0 ? <Text style={styles.semHorario}>Não há horários restantes para este médico neste dia.</Text> : null}</> : null}
+    <Pressable style={styles.botaoPrincipal} onPress={avancar}><Text style={styles.textoBotao}>Avançar para confirmação</Text></Pressable><Pressable onPress={() => setMostrarFormulario(false)}><Text style={styles.cancelar}>Cancelar</Text></Pressable>
+  </View>} /></SafeAreaView>;
 
-  function corDaPrioridade(valor) {
-    if (valor === 'Alta') return styles.prioridadeAlta;
-    if (valor === 'Baixa') return styles.prioridadeBaixa;
-    return styles.prioridadeMedia;
-  }
-
-  function renderizarItem({ item }) {
-    return (
-      <View style={[styles.card, item.concluido && styles.cardConcluido]}>
-        <View style={styles.linhaTitulo}>
-          <Text style={[styles.nomeCard, item.concluido && styles.textoConcluido]}>
-            {item.concluido ? '✓ ' : ''}{item.nome}
-          </Text>
-          <Text style={[styles.prioridadeCard, corDaPrioridade(item.prioridade)]}>
-            {item.prioridade}
-          </Text>
-        </View>
-        <Text style={styles.dataCard}>Data: {item.data}</Text>
-        {item.observacao ? <Text style={styles.observacaoCard}>{item.observacao}</Text> : null}
-
-        <View style={styles.acoes}>
-          <Pressable style={[styles.botaoAcao, styles.botaoConcluir]} onPress={() => alterarConclusao(item.id)}>
-            <Text style={styles.textoBotao}>{item.concluido ? 'Reabrir' : 'Concluir'}</Text>
-          </Pressable>
-          <Pressable style={[styles.botaoAcao, styles.botaoEditar]} onPress={() => editar(item)}>
-            <Text style={styles.textoBotao}>Editar</Text>
-          </Pressable>
-          <Pressable style={[styles.botaoAcao, styles.botaoExcluir]} onPress={() => excluir(item.id)}>
-            <Text style={styles.textoBotao}>Excluir</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <FlatList
-        data={exibirFormulario ? [] : lista}
-        keyExtractor={(item) => item.id}
-        renderItem={renderizarItem}
-        contentContainerStyle={styles.lista}
-        ListHeaderComponent={
-          <View>
-            <Text style={styles.titulo}>{'\n'}Gerenciador de Compromissos</Text>
-            {exibirFormulario ? (
-              <Pressable style={styles.botaoGoogle} onPress={abrirGoogle}>
-                <Text style={styles.textoGoogle}>Abrir Google</Text>
-              </Pressable>
-            ) : null}
-            {exibirFormulario ? <View style={styles.formulario}>
-              <Text style={styles.subtitulo}>{idEditando ? 'Editar compromisso' : 'Novo compromisso'}</Text>
-              <TextInput style={styles.input} placeholder="Nome do compromisso" value={nome} onChangeText={setNome} />
-              <TextInput style={styles.input} placeholder="Data de vencimento (ex.: 31/08/2026)" value={data} onChangeText={setData} />
-              <TextInput style={[styles.input, styles.observacaoInput]} placeholder="Observação (opcional)" value={observacao} onChangeText={setObservacao} multiline />
-
-              <Text style={styles.label}>Prioridade</Text>
-              <View style={styles.prioridades}>
-                {opcoesPrioridade.map((opcao) => (
-                  <Pressable key={opcao} onPress={() => setPrioridade(opcao)} style={[styles.opcao, prioridade === opcao && styles.opcaoAtiva]}>
-                    <Text style={[styles.textoOpcao, prioridade === opcao && styles.textoOpcaoAtiva]}>{opcao}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Pressable style={styles.botaoSalvar} onPress={salvar}>
-                <Text style={styles.textoSalvar}>{idEditando ? 'Salvar edição' : 'Adicionar compromisso'}</Text>
-              </Pressable>
-              {idEditando ? <Pressable onPress={limparFormulario}><Text style={styles.cancelar}>Cancelar edição</Text></Pressable> : null}
-            </View> : null}
-            {!exibirFormulario ? (
-              <Text style={styles.tituloLista}>Compromissos do dia ({lista.length})</Text>
-            ) : null}
-          </View>
-        }
-        ListEmptyComponent={
-          !exibirFormulario ? <Text style={styles.vazio}>Nenhum compromisso adicionado.</Text> : null
-        }
-      />
-    </SafeAreaView>
-  );
+  return <SafeAreaView style={styles.container}><FlatList data={agendamentos} keyExtractor={(item) => item.id} contentContainerStyle={styles.lista} ListHeaderComponent={<><Text style={styles.titulo}>Meus agendamentos</Text><Pressable style={styles.botaoPrincipal} onPress={() => setMostrarFormulario(true)}><Text style={styles.textoBotao}>Fazer novo agendamento</Text></Pressable></>} ListEmptyComponent={<Text style={styles.vazio}>Você ainda não possui consultas agendadas.</Text>} renderItem={renderizarItem} /></SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#eff6ff' },
-  lista: { padding: 16, paddingBottom: 32 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#1e3a8a', marginVertical: 12, textAlign: 'center' },
-  botaoGoogle: { backgroundColor: '#4285f4', borderRadius: 8, alignItems: 'center', padding: 12, marginBottom: 4 },
-  textoGoogle: { color: '#fff', fontWeight: 'bold' },
-  formulario: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 20, elevation: 3 },
-  subtitulo: { fontSize: 19, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#93c5fd', borderRadius: 8, padding: 11, marginBottom: 10, backgroundColor: '#f8fafc' },
-  observacaoInput: { minHeight: 60, textAlignVertical: 'top' },
-  label: { fontWeight: 'bold', color: '#334155', marginBottom: 8 },
-  prioridades: { flexDirection: 'row', gap: 8 },
-  opcao: { flex: 1, borderWidth: 1, borderColor: '#93c5fd', borderRadius: 8, padding: 9, alignItems: 'center' },
-  opcaoAtiva: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
-  textoOpcao: { color: '#475569' },
-  textoOpcaoAtiva: { color: '#1d4ed8', fontWeight: 'bold' },
-  botaoSalvar: { backgroundColor: '#2563eb', borderRadius: 8, alignItems: 'center', padding: 13, marginTop: 16 },
-  textoSalvar: { color: '#fff', fontWeight: 'bold' },
-  cancelar: { color: '#dc2626', fontWeight: 'bold', textAlign: 'center', marginTop: 12 },
-  tituloLista: { fontSize: 19, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 10 },
-  vazio: { textAlign: 'center', color: '#64748b', marginTop: 15 },
-  card: { backgroundColor: '#fff', borderLeftWidth: 5, borderLeftColor: '#2563eb', borderRadius: 10, padding: 14, marginBottom: 12 },
-  cardConcluido: { borderLeftColor: '#16a34a', opacity: 0.7 },
-  linhaTitulo: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  nomeCard: { flex: 1, fontSize: 17, fontWeight: 'bold', color: '#1e293b' },
-  textoConcluido: { textDecorationLine: 'line-through' },
-  prioridadeCard: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, fontSize: 12, fontWeight: 'bold', overflow: 'hidden' },
-  prioridadeAlta: { backgroundColor: '#fee2e2', color: '#dc2626' },
-  prioridadeMedia: { backgroundColor: '#fef3c7', color: '#b45309' },
-  prioridadeBaixa: { backgroundColor: '#dcfce7', color: '#15803d' },
-  dataCard: { marginTop: 8, color: '#475569' },
-  observacaoCard: { marginTop: 5, color: '#64748b' },
-  acoes: { flexDirection: 'row', gap: 8, marginTop: 13 },
-  botaoAcao: { borderRadius: 6, paddingVertical: 8, paddingHorizontal: 10 },
-  botaoConcluir: { backgroundColor: '#16a34a' },
-  botaoEditar: { backgroundColor: '#f59e0b' },
-  botaoExcluir: { backgroundColor: '#dc2626' },
-  textoBotao: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#f0fdfa' }, lista: { padding: 16, paddingBottom: 32 }, formularioLista: { padding: 16, paddingBottom: 32 }, titulo: { color: '#134e4a', fontSize: 26, fontWeight: 'bold', marginBottom: 18, textAlign: 'center' }, formulario: { backgroundColor: '#fff', borderRadius: 14, elevation: 3, padding: 18 }, label: { color: '#334155', fontWeight: 'bold', marginBottom: 8, marginTop: 14 }, opcoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, opcao: { borderColor: '#99f6e4', borderRadius: 8, borderWidth: 1, padding: 9 }, medicoOpcao: { borderColor: '#99f6e4', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 10 }, opcaoAtiva: { backgroundColor: '#ccfbf1', borderColor: '#0f766e' }, textoOpcao: { color: '#475569' }, textoOpcaoAtiva: { color: '#115e59', fontWeight: 'bold' }, calendario: { borderColor: '#ccfbf1', borderRadius: 10, borderWidth: 1, padding: 10 }, mes: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }, nomeMes: { color: '#134e4a', fontWeight: 'bold' }, seta: { color: '#0f766e', fontSize: 28, paddingHorizontal: 10 }, setaDesativada: { color: '#cbd5e1' }, grade: { flexDirection: 'row', flexWrap: 'wrap' }, diaSemana: { color: '#64748b', fontSize: 11, fontWeight: 'bold', textAlign: 'center', width: '14.2857%' }, celula: { alignItems: 'center', height: 34, justifyContent: 'center', width: '14.2857%' }, diaCalendario: { borderRadius: 17 }, diaIndisponivel: { opacity: 0.35 }, diaSelecionado: { backgroundColor: '#0f766e' }, numeroDia: { color: '#15803d', fontWeight: 'bold' }, numeroIndisponivel: { color: '#64748b' }, numeroSelecionado: { color: '#fff' }, legenda: { color: '#64748b', fontSize: 12, marginTop: 8 }, ponto: { color: '#15803d' }, horarios: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, horario: { borderColor: '#99f6e4', borderRadius: 8, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 9 }, horarioAtivo: { backgroundColor: '#ccfbf1', borderColor: '#0f766e' }, semHorario: { color: '#b91c1c', marginTop: 5 }, botaoPrincipal: { alignItems: 'center', backgroundColor: '#0f766e', borderRadius: 8, marginBottom: 20, marginTop: 20, padding: 13 }, textoBotao: { color: '#fff', fontWeight: 'bold' }, cancelar: { color: '#b91c1c', fontWeight: 'bold', textAlign: 'center' }, vazio: { color: '#64748b', marginTop: 12, textAlign: 'center' }, card: { backgroundColor: '#fff', borderLeftColor: '#0f766e', borderLeftWidth: 5, borderRadius: 10, marginBottom: 12, padding: 14 }, especialidade: { color: '#134e4a', fontSize: 18, fontWeight: 'bold' }, medico: { color: '#475569', marginTop: 4 }, data: { color: '#0f766e', fontWeight: 'bold', marginTop: 8 }, botaoDesmarcar: { alignItems: 'center', borderColor: '#dc2626', borderRadius: 7, borderWidth: 1, marginTop: 14, padding: 9 }, textoDesmarcar: { color: '#dc2626', fontWeight: 'bold' },
 });
