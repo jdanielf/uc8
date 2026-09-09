@@ -11,6 +11,7 @@ import Compromissos from './src/screens/Compromissos';
 import Contato from './src/screens/Configuracoes';
 import Confirmacao from './src/screens/Confirmacao';
 import { AgendamentosProvider } from './src/context/AgendamentosContext';
+import { AuthProvider } from './src/context/AuthContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,13 +29,17 @@ function TabNavigator() {
 
 export default function App() {
   return (
-    <SafeAreaProvider><AgendamentosProvider><NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
-        <Stack.Screen name="Cadastro" component={Cadastro} options={{ title: 'Criar conta' }} />
-        <Stack.Screen name="Menu" component={TabNavigator} options={{ headerShown: false }} />
+    <SafeAreaProvider><AgendamentosProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Login">
+            <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+            <Stack.Screen name="Cadastro" component={Cadastro} options={{ title: 'Criar conta' }} />
+            <Stack.Screen name="Menu" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="Confirmacao" component={Confirmacao} options={{ title: 'Confirmar consulta' }} />
       </Stack.Navigator>
-    </NavigationContainer><StatusBar style="dark" /></AgendamentosProvider></SafeAreaProvider>
+    </NavigationContainer>
+     </AuthProvider>
+    <StatusBar style="dark" /></AgendamentosProvider></SafeAreaProvider>
   );
 }

@@ -1,13 +1,23 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
+import useAuth from '../context/AuthContext';
 import { Alert, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  function entrar() {
+  // const { usuario } = useAuth();
+
+  async function entrar() {
     if (!email.trim() || !senha) {
       Alert.alert('Atenção', 'Preencha o e-mail e a senha para continuar.');
+      return;
+    }
+
+    const usuario = JSON.parse (await AsyncStorage.getItem('usuario'));
+    if (!usuario || email.trim() !== usuario.email || senha !== usuario.senha) {
+      Alert.alert('Erro', 'E-mail ou senha incorretos.');
       return;
     }
 

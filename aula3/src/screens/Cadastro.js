@@ -1,20 +1,30 @@
 import { useState } from 'react';
 import { Alert, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import useAuth from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Cadastro({ navigation }) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  function cadastrar() {
+  // const { setUsuario } = useAuth();
+
+  async function cadastrar() {
     if (!nome.trim() || !email.trim() || !senha) {
       Alert.alert('Atenção', 'Preencha todos os campos para continuar.');
       return;
     }
 
+    // setUsuario({ nome: nome.trim(), email: email.trim(), senha });
+    try {
+    await AsyncStorage.setItem('usuario', JSON.stringify({ nome: nome.trim(), email: email.trim(), senha }));
     Alert.alert('Cadastro realizado', 'Agora você pode entrar na sua agenda.', [
       { text: 'Ir para Login', onPress: () => navigation.goBack() },
     ]);
+  }catch (error) {
+      Alert.alert('Erro', 'Ocorreu um erro ao salvar os dados. Tente novamente.');
+    } 
   }
 
   return (
