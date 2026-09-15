@@ -12,8 +12,8 @@ import Contato from './src/screens/Configuracoes';
 import Confirmacao from './src/screens/Confirmacao';
 import { AgendamentosProvider } from './src/context/AgendamentosContext';
 import { AuthProvider } from './src/context/AuthContext';
-import { abrirBd, criarTabelaUsuarios } from './src/database/databse';
 import { useEffect } from 'react';
+import { inicializarBanco } from './src/repository/usuarioRepository';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,14 +30,9 @@ function TabNavigator() {
 }
 
 export default function App() {
-
-
-
-
-  useEffect( () => {
-   
-    criarTabelaUsuarios()
-  }, [])
+  useEffect(() => {
+    inicializarBanco();
+  }, []);
 
   return (
     <SafeAreaProvider><AgendamentosProvider>

@@ -20,11 +20,24 @@ export async function criarTabelaUsuarios() {
         nome TEXT NOT NULL,
         email TEXT NOT NULL,
         senha TEXT NOT NULL
-      )
+      );
+
+      create table if not exists agendamentos (
+      id integer primary key autoincrement not null,
+      nome text not null,
+      data text not null,
+      hora text not null,
+      especialidade text not null,
+      medico text not null
+    );
+
+
+
     `);
     console.log("Tabela de usuários criada com sucesso");
   } catch (error) {
     console.error("Erro ao criar a tabela de usuários:", error);
+    throw error;
   }
 }
     
