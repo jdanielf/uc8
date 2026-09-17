@@ -32,6 +32,7 @@ function TabNavigator() {
 export default function App() {
   useEffect(() => {
     inicializarBanco();
+    
   }, []);
 
   return (
