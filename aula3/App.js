@@ -14,17 +14,19 @@ import { AgendamentosProvider } from './src/context/AgendamentosContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { useEffect } from 'react';
 import { inicializarBanco } from './src/repository/usuarioRepository';
+import info from './src/screens/info.js';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
-  const icones = { 'Página Inicial': 'home', Agendamentos: 'calendar', Contato: 'call' };
+  const icones = { 'Página Inicial': 'home', Agendamentos: 'calendar', Contato: 'call', 'Informações': 'information-circle' };
   return (
     <Tab.Navigator screenOptions={({ route }) => ({ headerTitleAlign: 'center', tabBarActiveTintColor: '#0f766e', tabBarIcon: ({ color, size }) => <Ionicons name={icones[route.name]} size={size} color={color} /> })}>
       <Tab.Screen name="Página Inicial" component={Menu} />
       <Tab.Screen name="Agendamentos" component={Compromissos} />
       <Tab.Screen name="Contato" component={Contato} />
+      <Tab.Screen name="Informações" component={info} options={{ title: 'Informações' }} />
     </Tab.Navigator>
   );
 }
