@@ -24,6 +24,12 @@
     "plugins": [
       "expo-font",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e9e06d8a-9f1f-4913-998f-294363ef64cd"
+      }
+    },
+    "owner": "jdanielf"
   }
 }
