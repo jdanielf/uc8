@@ -1,0 +1,12 @@
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import usePets from '../context/PetContext';
+import { Botao, Campo, Card, Pagina, s, cores } from '../components/UI';
+export default function Login() {
+  const { entrar } = usePets();
+  const [email, setEmail] = useState(''); const [senha, setSenha] = useState(''); const [erro, setErro] = useState('');
+  function login() { setErro(!email.trim() || !senha ? 'Informe seu e-mail e sua senha.' : entrar(email, senha) ? '' : 'E-mail ou senha incorretos. Confira os dados recebidos da clínica.'); }
+  return <SafeAreaView style={{ flex: 1, backgroundColor: cores.fundo }}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><Pagina><View style={{ alignItems: 'center', paddingVertical: 35 }}><View style={{ backgroundColor: '#DDEEE5', borderRadius: 24, padding: 22 }}><Ionicons name="paw" size={46} color={cores.verde} /></View><Text style={[s.titulo, { marginTop: 18 }]}>PetCare</Text><Text style={s.muted}>Perto do seu pet, em cada cuidado.</Text></View><Card><Text style={s.heading}>Bem-vindo de volta</Text><Text style={[s.muted, { marginBottom: 16 }]}>Entre com o e-mail cadastrado na clínica e a senha recebida por e-mail.</Text><Campo label="E-mail" placeholder="seuemail@exemplo.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} value={email} onChangeText={setEmail} /><Campo label="Senha" placeholder="Sua senha" secureTextEntry value={senha} onChangeText={setSenha} onSubmitEditing={login} />{erro ? <Text accessibilityRole="alert" style={{ color: '#B43D38' }}>{erro}</Text> : null}<Botao titulo="Entrar" onPress={login} /><Text style={s.muted}>Primeiro acesso ou esqueceu sua senha? Solicite os dados de acesso à clínica.</Text></Card><Card><Text style={s.label}>VERSÃO PARA AVALIAÇÃO • DADOS FICTÍCIOS</Text><Text style={s.muted}>Cliente: cliente@petcare.com / pet123{ '\n' }Clínica: clinica@petcare.com / clinica123</Text><Botao titulo="Preencher acesso do cliente" secundario onPress={() => { setEmail('cliente@petcare.com'); setSenha('pet123'); setErro(''); }} /><Botao titulo="Preencher acesso da clínica" secundario onPress={() => { setEmail('clinica@petcare.com'); setSenha('clinica123'); setErro(''); }} /></Card></Pagina></KeyboardAvoidingView></SafeAreaView>;
+}
