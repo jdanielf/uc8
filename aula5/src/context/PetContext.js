@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { inicial } from '../data/inicial';
+import { hoje } from '../utils/domain.cjs';
 const Context = createContext();
 const chave = '@aula5/petcare/v1';
 export function PetProvider({ children }) {
@@ -24,7 +25,7 @@ export function PetProvider({ children }) {
   }
   function cadastrar(cliente, pet) {
     if (usuario?.papel !== 'clinica' || erro) return;
-    setDados(atual => ({ ...atual, clientes: atual.clientes.some(c => c.email === cliente.email) ? atual.clientes : [...atual.clientes, cliente], pets: [...atual.pets, pet] }));
+    setDados(atual => ({ ...atual, clientes: atual.clientes.some(c => c.email === cliente.email) ? atual.clientes : [...atual.clientes, cliente], pets: [...atual.pets, { ...pet, dataCadastro: hoje() }] }));
   }
   return <Context.Provider value={{ dados, usuario, carregando, erro, entrar, sair: () => setUsuario(null), alterar, cadastrar }}>{children}</Context.Provider>;
 }

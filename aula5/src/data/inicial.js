@@ -3,8 +3,8 @@ const data = hoje();
 export const inicial = {
   clientes: [{ nome: 'Mariana', email: 'cliente@petcare.com', senha: 'pet123' }],
   pets: [
-    { id: 'luna', nome: 'Luna', especie: 'Cachorro', raca: 'Golden Retriever', idade: '3 anos', peso: '26 kg', email: 'cliente@petcare.com', observacoes: 'Carinhosa e tranquila. Atenção à sensibilidade na pele.' },
-    { id: 'milo', nome: 'Milo', especie: 'Gato', raca: 'Sem raça definida', idade: '1 ano', peso: '4 kg', email: 'cliente@petcare.com', observacoes: 'Prefere um ambiente calmo.' }
+    { id: 'luna', dataCadastro: data, nome: 'Luna', especie: 'Cachorro', raca: 'Golden Retriever', idade: '3 anos', peso: '26 kg', email: 'cliente@petcare.com', observacoes: 'Carinhosa e tranquila. Atenção à sensibilidade na pele.' },
+    { id: 'milo', dataCadastro: data, nome: 'Milo', especie: 'Gato', raca: 'Sem raça definida', idade: '1 ano', peso: '4 kg', email: 'cliente@petcare.com', observacoes: 'Prefere um ambiente calmo.' }
   ],
   servicos: [
     { id: 's1', petId: 'luna', data, hora: '09:00', tipo: 'Avaliação', titulo: 'Avaliação de entrada', status: 'Concluído', detalhes: 'Luna foi recebida e avaliada pela equipe. Peso e condições gerais registrados.', profissional: 'Equipe PetCare' },

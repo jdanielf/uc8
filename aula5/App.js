@@ -16,7 +16,7 @@ function Abas() {
   const icones = { Pets: 'paw-outline', Clínica: 'medkit-outline', Conta: 'person-outline' };
   return <Tab.Navigator screenOptions={({ route }) => ({ headerTitleAlign: 'center', tabBarActiveTintColor: cores.verde, tabBarIcon: ({ color, size }) => <Ionicons name={icones[route.name]} color={color} size={size} /> })}>
     <Tab.Screen name="Pets" component={Pets} options={{ title: 'Meus pets' }} />
-    {usuario.papel === 'clinica' && <Tab.Screen name="Clínica" component={Clinica} />}
+    {usuario.papel === 'clinica' && <Tab.Screen name="Clínica" component={Clinica} options={{ title: 'Cadastro' }} />}
     <Tab.Screen name="Conta" component={Conta} />
   </Tab.Navigator>;
 }
