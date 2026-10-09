@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Image, Linking, Pressable, Text, View } from 'react-native';
+import { Image, Linking, Platform, Pressable, Text, View } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { RecursosConta } from './Recursos';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import usePets from '../context/PetContext';
 import { Botao, Campo, Pagina, Titulo, Card, Vazio, Caixa, Linha, cores, s } from '../components/UI';
 import { formatarData, petsDoCliente, servicosDoDia } from '../utils/domain.cjs';
 
-const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
 function Erro({ texto }) { return texto ? <Text accessibilityRole="alert" style={{ color: '#A53737', marginVertical: 10 }}>{texto}</Text> : null; }
 function Foto({ uri, grande }) {
   const [falhou, setFalhou] = useState(false);
@@ -17,7 +19,7 @@ export function Login() {
   const [email, setEmail] = useState(''); const [senha, setSenha] = useState(''); const [erro, setErro] = useState('');
   return <SafeAreaView style={{ flex: 1, backgroundColor: cores.fundo }}><Pagina>
     <View style={{ alignItems: 'center', paddingVertical: 30 }}><Ionicons name="paw" size={60} color={cores.verde} /><Text style={[s.titulo, { marginTop: 14 }]}>PetCare</Text><Text style={s.muted}>Perto do seu pet, em cada cuidado.</Text></View>
-    <Card><Titulo subtitulo="Use o e-mail cadastrado na clínica e a senha recebida por e-mail.">Bem-vindo</Titulo>
+    <Card><Titulo subtitulo="Use o e-mail e a senha cadastrados pela clínica.">Bem-vindo</Titulo>
       <Campo label="E-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
       <Campo label="Senha" value={senha} onChangeText={setSenha} secureTextEntry autoComplete="current-password" />
       <Erro texto={erro} /><Botao titulo="Entrar" onPress={() => { if (!entrar(email, senha)) setErro('Confira seu e-mail e sua senha. Se precisar, fale com a clínica.'); }} />
@@ -54,14 +56,20 @@ export function PetDetalhes({ route }) {
   const servicos = servicosDoDia(dados.servicos, pet.id, data);
   const fotos = dados.fotos.filter(item => item.petId === pet.id && item.data === data);
   const notas = dados.notas.filter(item => item.petId === pet.id && item.data === data);
-  const datas = [...new Set(dados.servicos.filter(v => v.petId === pet.id).map(v => v.data))].sort().reverse();
+  const datas = [...new Set([...dados.servicos, ...dados.fotos, ...dados.notas].filter(v => v.petId === pet.id).map(v => v.data))].sort().reverse();
   const anos = [...new Set(datas.map(d => d.slice(0, 4)))];
   const meses = [...new Set(datas.filter(d => d.startsWith(`${ano}-`)).map(d => d.slice(5, 7)))];
   const dias = datas.filter(d => d.startsWith(`${ano}-${mes}-`));
   const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const cardPeriodo = (chave, titulo, onPress) => <Pressable key={chave} accessibilityRole="button" accessibilityLabel={titulo} onPress={onPress}><Card><View style={s.row}><Ionicons name="calendar-outline" size={26} color={cores.verde} /><Text style={[s.heading, { flex: 1 }]}>{titulo}</Text><Ionicons name="chevron-forward" size={22} color={cores.verde} /></View></Card></Pressable>;
   async function abrirNota() {
-    try { await Linking.openURL(nota.url || nota.uri); }
+    try {
+      const uri = nota.url || nota.uri;
+      if (Platform.OS === 'web') { const link = document.createElement('a'); link.href = uri; link.download = nota.nome || 'nota'; document.body.appendChild(link); link.click(); link.remove(); }
+      else if (uri.startsWith('http')) await Linking.openURL(uri);
+      else if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: nota.mime, dialogTitle: 'Nota fiscal' });
+      else throw new Error('Compartilhamento indisponível');
+    }
     catch { setErroNota('Não foi possível abrir o arquivo da nota fiscal.'); }
   }
   return <Pagina><Titulo subtitulo="Cada cuidado, acompanhado por você.">{pet.nome}</Titulo>
@@ -91,40 +99,5 @@ export function PetDetalhes({ route }) {
 }
 export function Conta() {
   const { usuario, sair } = usePets();
-  return <Pagina><Titulo>Minha conta</Titulo><Card><Linha label="Nome" valor={usuario.nome} /><Linha label="E-mail" valor={usuario.email} /><Linha label="Perfil" valor={usuario.papel === 'clinica' ? 'Equipe da clínica' : 'Tutor'} /></Card><Card><Text style={s.heading}>Precisa de ajuda?</Text><Text style={s.muted}>Solicite à clínica a correção dos dados, informações sobre os procedimentos ou uma nova senha.</Text></Card><Botao titulo="Sair da conta" onPress={sair} /></Pagina>;
-}
-export function Clinica() {
-  const { dados, usuario, cadastrar, erro: erroStorage } = usePets();
-  const [form, setForm] = useState({});
-  const [erro, setErro] = useState(''); const [mensagem, setMensagem] = useState('');
-  if (usuario.papel !== 'clinica') return <Pagina><Vazio texto="Área exclusiva da clínica." /></Pagina>;
-  const campo = (chave, label, props = {}) => <Campo label={label} value={form[chave] || ''} onChangeText={valor => setForm(f => ({ ...f, [chave]: valor }))} {...props} />;
-  function salvar() {
-    setErro(''); setMensagem('');
-    if (erroStorage) { setErro(erroStorage); return; }
-    const email = (form.email || '').trim().toLowerCase();
-    if (!form.tutor?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !form.nome?.trim() || !form.raca?.trim() || !form.idade?.trim()) { setErro('Preencha tutor, e-mail válido, nome do pet, raça e idade.'); return; }
-    const existe = dados.clientes.find(c => c.email === email);
-    if (!existe && (form.senha || '').length < 6) { setErro('Defina uma senha demonstrativa com pelo menos 6 caracteres.'); return; }
-    const pet = { id: id(), nome: form.nome.trim(), raca: form.raca.trim(), idade: form.idade.trim(), peso: form.peso, especie: form.especie || 'Cachorro', observacoes: form.observacoes, email };
-    cadastrar({ nome: form.tutor.trim(), email, senha: form.senha }, pet); setForm({});
-    setMensagem(existe ? 'Pet cadastrado no acesso existente do tutor.' : 'Tutor e pet cadastrados localmente. A senha NÃO foi enviada por e-mail; use os dados cadastrados para testar neste aparelho.');
-  }
-  return <Pagina><Titulo subtitulo="Cadastre os dados do tutor e do pet.">Cadastro</Titulo>
-    <Card><Text style={s.heading}>Novo cadastro</Text>
-      {campo('tutor', 'Nome do tutor')}
-      {campo('email', 'E-mail cadastrado na clínica', { autoCapitalize: 'none', keyboardType: 'email-address' })}
-      {campo('senha', 'Senha para avaliação local', { secureTextEntry: true })}
-      <Text style={s.muted}>Para e-mail já cadastrado, a senha existente será mantida.</Text>
-      {campo('nome', 'Nome do pet')}
-      {campo('especie', 'Espécie', { placeholder: 'Cachorro, gato…' })}
-      {campo('raca', 'Raça')}
-      {campo('idade', 'Idade')}
-      {campo('peso', 'Peso')}
-      {campo('observacoes', 'Observações', { multiline: true })}
-      <Erro texto={erro} />
-      {mensagem ? <Text accessibilityRole="alert" style={{ color: cores.verde, marginVertical: 10 }}>{mensagem}</Text> : null}
-      <Botao disabled={!!erroStorage} titulo="Salvar cadastro" onPress={salvar} />
-    </Card>
-  </Pagina>;
+  return <Pagina><Titulo>Minha conta</Titulo><Card><Linha label="Nome" valor={usuario.nome} /><Linha label="E-mail" valor={usuario.email} /><Linha label="Perfil" valor={usuario.papel === 'clinica' ? 'Equipe da clínica' : 'Tutor'} /></Card><RecursosConta /><Card><Text style={s.heading}>Precisa de ajuda?</Text><Text style={s.muted}>Solicite à clínica a correção dos dados, informações sobre os procedimentos ou uma nova senha.</Text></Card><Botao titulo="Sair da conta" onPress={sair} /></Pagina>;
 }

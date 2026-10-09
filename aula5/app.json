@@ -21,7 +21,22 @@
     },
     "plugins": [
       "expo-font",
-      "expo-sharing"
-    ]
+      "expo-sharing",
+      "expo-sqlite",
+      "expo-notifications",
+      ["expo-location", { "locationWhenInUsePermission": "Permita acessar sua localização para traçar a rota até a clínica PetCare." }],
+      ["expo-image-picker", { "photosPermission": "Permita selecionar fotos dos procedimentos dos pets.", "cameraPermission": false, "microphonePermission": false }]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6a6298a2-e373-43b6-aa3d-c40c0dbaa74f"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6a6298a2-e373-43b6-aa3d-c40c0dbaa74f"
+    }
   }
 }

@@ -6,17 +6,21 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import usePets, { PetProvider } from './src/context/PetContext';
-import { Login, Pets, PetDetalhes, Clinica, Conta } from './src/screens/Telas';
+import { Login, Pets, PetDetalhes, Conta } from './src/screens/Telas';
+import Clinica from './src/screens/Clinica';
+import { Avisos } from './src/screens/Recursos';
 import { cores } from './src/components/UI';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 function Abas() {
-  const { usuario } = usePets();
-  const icones = { Pets: 'paw-outline', Clínica: 'medkit-outline', Conta: 'person-outline' };
+  const { usuario, dados } = usePets();
+  const naoLidos = (dados.avisos || []).filter(a => a.email === usuario.email && !a.lido).length;
+  const icones = { Pets: 'paw-outline', Clínica: 'medkit-outline', Conta: 'person-outline', Avisos: 'notifications-outline' };
   return <Tab.Navigator screenOptions={({ route }) => ({ headerTitleAlign: 'center', tabBarActiveTintColor: cores.verde, tabBarIcon: ({ color, size }) => <Ionicons name={icones[route.name]} color={color} size={size} /> })}>
     <Tab.Screen name="Pets" component={Pets} options={{ title: 'Meus pets' }} />
     {usuario.papel === 'clinica' && <Tab.Screen name="Clínica" component={Clinica} options={{ title: 'Cadastro' }} />}
+    {usuario.papel === 'cliente' && <Tab.Screen name="Avisos" component={Avisos} options={{ tabBarBadge: naoLidos || undefined }} />}
     <Tab.Screen name="Conta" component={Conta} />
   </Tab.Navigator>;
 }

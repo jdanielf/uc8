@@ -1,9 +1,20 @@
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 export const cores = { verde: '#176B57', fundo: '#F3F6F4', texto: '#203B33', cinza: '#677A73' };
 export function Botao({ titulo, onPress, secundario, disabled }) { return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={[s.botao, secundario && s.secundario, disabled && { opacity: .45 }]}><Text style={{ color: secundario ? cores.verde : '#fff', fontWeight: '700' }}>{titulo}</Text></Pressable>; }
-export function Campo({ label, ...props }) { return <View style={{ marginBottom: 14 }}><Text style={s.label}>{label}</Text><TextInput accessibilityLabel={label} placeholderTextColor="#82928C" style={[s.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]} {...props} /></View>; }
+export function Campo({ label, secureTextEntry, ...props }) {
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  return <View style={{ marginBottom: 14 }}>
+    <Text style={s.label}>{label}</Text>
+    <TextInput accessibilityLabel={label} placeholderTextColor="#82928C" style={[s.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]} {...props} secureTextEntry={!!secureTextEntry && !senhaVisivel} autoCapitalize={secureTextEntry ? 'none' : props.autoCapitalize} autoCorrect={secureTextEntry ? false : props.autoCorrect} spellCheck={secureTextEntry ? false : props.spellCheck} />
+    {secureTextEntry && <Pressable accessibilityRole="button" accessibilityLabel={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'} onPress={() => setSenhaVisivel(visivel => !visivel)} style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, paddingVertical: 10, paddingHorizontal: 4 }}>
+      <Ionicons name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'} size={22} color={cores.verde} />
+      <Text style={{ color: cores.verde, fontWeight: '600' }}>{senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}</Text>
+    </Pressable>}
+  </View>;
+}
 export function Pagina({ children }) { return <ScrollView style={{ flex: 1, backgroundColor: cores.fundo }} contentContainerStyle={s.pagina} keyboardShouldPersistTaps="handled">{children}</ScrollView>; }
 export function Titulo({ children, subtitulo }) { return <View style={{ marginBottom: 20 }}><Text style={s.titulo}>{children}</Text>{subtitulo && <Text style={s.muted}>{subtitulo}</Text>}</View>; }
 export function Card({ children, style }) { return <View style={[s.card, style]}>{children}</View>; }
