@@ -71,6 +71,15 @@ export function PetProvider({ children }) {
     await gravar(atual => ({ ...atual, clientes: atual.clientes.some(c => c.email === cliente.email) ? atual.clientes : [...atual.clientes, cliente], pets: [...atual.pets, { ...pet, dataCadastro: hoje() }] }));
     Vibration.vibrate(150);
   }
+  async function redefinirSenha(email, senha) {
+    if (usuario?.papel !== 'clinica') throw new Error('Redefinição não autorizada.');
+    if (typeof senha !== 'string' || senha.trim().length < 6) throw new Error('Informe uma senha com pelo menos 6 caracteres.');
+    await gravar(atual => {
+      if (!atual.clientes.some(c => c.email === email)) throw new Error('Tutor não encontrado.');
+      return { ...atual, clientes: atual.clientes.map(c => c.email === email ? { ...c, senha } : c) };
+    });
+    Vibration.vibrate(150);
+  }
   async function configurarNotificacoes(valor) {
     if (valor) await permitirNotificacoes();
     await gravar(atual => ({ ...atual, preferencias: [...(atual.preferencias || []).filter(p => p.id !== usuario.email), { id: usuario.email, notificacoes: valor }] }));
@@ -81,6 +90,6 @@ export function PetProvider({ children }) {
     await sincronizarLembretes([], [], '', false).catch(() => {});
     setUsuario(null);
   }
-  return <Context.Provider value={{ dados, usuario, carregando, erro, entrar, sair, alterar, cadastrar, configurarNotificacoes, notificacoesAtivas: ativo, marcarLido, avisoSistema }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ dados, usuario, carregando, erro, entrar, sair, alterar, cadastrar, redefinirSenha, configurarNotificacoes, notificacoesAtivas: ativo, marcarLido, avisoSistema }}>{children}</Context.Provider>;
 }
 export default function usePets() { return useContext(Context); }

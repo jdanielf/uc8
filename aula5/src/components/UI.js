@@ -1,27 +1,32 @@
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { formatarEntradaData } from '../utils/domain.cjs';
+import { createElement, useState } from 'react';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 export const cores = { verde: '#176B57', fundo: '#F3F6F4', texto: '#203B33', cinza: '#677A73' };
 export function Botao({ titulo, onPress, secundario, disabled }) { return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={[s.botao, secundario && s.secundario, disabled && { opacity: .45 }]}><Text style={{ color: secundario ? cores.verde : '#fff', fontWeight: '700' }}>{titulo}</Text></Pressable>; }
 export function Campo({ label, secureTextEntry, ...props }) {
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const campoData = label?.includes('DD/MM/AAAA');
   return <View style={{ marginBottom: 14 }}>
     <Text style={s.label}>{label}</Text>
-    <TextInput accessibilityLabel={label} placeholderTextColor="#82928C" style={[s.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]} {...props} secureTextEntry={!!secureTextEntry && !senhaVisivel} autoCapitalize={secureTextEntry ? 'none' : props.autoCapitalize} autoCorrect={secureTextEntry ? false : props.autoCorrect} spellCheck={secureTextEntry ? false : props.spellCheck} />
+    <TextInput accessibilityLabel={label} placeholderTextColor="#82928C" style={[s.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]} {...props} onChangeText={campoData ? valor => props.onChangeText?.(formatarEntradaData(valor)) : props.onChangeText} maxLength={campoData ? 10 : props.maxLength} keyboardType={campoData ? 'number-pad' : props.keyboardType} secureTextEntry={!!secureTextEntry && !senhaVisivel} autoCapitalize={secureTextEntry ? 'none' : props.autoCapitalize} autoCorrect={secureTextEntry ? false : props.autoCorrect} spellCheck={secureTextEntry ? false : props.spellCheck} />
     {secureTextEntry && <Pressable accessibilityRole="button" accessibilityLabel={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'} onPress={() => setSenhaVisivel(visivel => !visivel)} style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, paddingVertical: 10, paddingHorizontal: 4 }}>
       <Ionicons name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'} size={22} color={cores.verde} />
       <Text style={{ color: cores.verde, fontWeight: '600' }}>{senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}</Text>
     </Pressable>}
   </View>;
 }
-export function Pagina({ children }) { return <ScrollView style={{ flex: 1, backgroundColor: cores.fundo }} contentContainerStyle={s.pagina} keyboardShouldPersistTaps="handled">{children}</ScrollView>; }
+export function Pagina({ children }) {
+  const pagina = <ScrollView style={{ flex: 1, backgroundColor: cores.fundo }} contentContainerStyle={s.pagina} keyboardShouldPersistTaps="handled">{children}</ScrollView>;
+  return Platform.OS === 'web' ? createElement('div', { translate: 'no', className: 'notranslate', lang: 'pt-BR', style: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0 } }, pagina) : pagina;
+}
 export function Titulo({ children, subtitulo }) { return <View style={{ marginBottom: 20 }}><Text style={s.titulo}>{children}</Text>{subtitulo && <Text style={s.muted}>{subtitulo}</Text>}</View>; }
 export function Card({ children, style }) { return <View style={[s.card, style]}>{children}</View>; }
 export function Vazio({ texto, icon = 'paw-outline' }) { return <Card><Ionicons name={icon} size={30} color={cores.cinza} /><Text style={s.muted}>{texto}</Text></Card>; }
 export function Caixa({ titulo, visible, onClose, children }) { return <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}><SafeAreaView style={s.overlay}><View style={s.modal}><View style={s.row}><Text style={s.heading}>{titulo}</Text><Pressable accessibilityRole="button" accessibilityLabel="Fechar" onPress={onClose} hitSlop={12}><Ionicons name="close" size={26} color={cores.texto} /></Pressable></View><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: 16, paddingBottom: 16 }}>{children}</ScrollView></View></SafeAreaView></Modal>; }
 export function Linha({ label, valor }) { return <View style={{ marginBottom: 14 }}><Text style={s.label}>{label}</Text><Text style={s.body}>{valor || 'Não informado'}</Text></View>; }
-export function Escolhas({ valores, value, onChange }) { return <View style={s.wrap}>{valores.map(v => <Pressable accessibilityRole="button" accessibilityState={{ selected: value === v }} key={v} onPress={() => onChange(v)} style={[s.chip, value === v && { backgroundColor: cores.verde }]}><Text style={{ color: value === v ? '#fff' : cores.verde, fontWeight: '600' }}>{v}</Text></Pressable>)}</View>; }
+export function Escolhas({ valores, value, onChange }) { return <View style={s.wrap}>{valores.map(v => <Pressable accessibilityRole="button" accessibilityState={{ selected: value === v }} key={v} onPress={() => onChange(v)} style={[s.chip, value === v && { backgroundColor: cores.verde }]}><Text style={{ color: value === v ? '#fff' : cores.verde, fontWeight: '600' }}>{Platform.OS === 'web' ? createElement('span', { translate: 'no', className: 'notranslate', lang: 'pt-BR' }, v) : v}</Text></Pressable>)}</View>; }
 export const s = StyleSheet.create({
   pagina: { padding: 22, paddingBottom: 40, width: '100%', maxWidth: 820, alignSelf: 'center' },
   titulo: { fontSize: 29, fontWeight: '800', color: cores.texto, marginBottom: 6 },

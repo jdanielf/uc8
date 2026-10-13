@@ -25,7 +25,7 @@
       "expo-sqlite",
       "expo-notifications",
       ["expo-location", { "locationWhenInUsePermission": "Permita acessar sua localização para traçar a rota até a clínica PetCare." }],
-      ["expo-image-picker", { "photosPermission": "Permita selecionar fotos dos procedimentos dos pets.", "cameraPermission": false, "microphonePermission": false }]
+      ["expo-image-picker", { "photosPermission": "Permita selecionar fotos dos procedimentos dos pets.", "cameraPermission": "Permita usar a câmera para fotografar os procedimentos dos pets.", "microphonePermission": false }]
     ],
     "extra": {
       "eas": {
